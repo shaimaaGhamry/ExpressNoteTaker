@@ -1,5 +1,5 @@
 const notes = require('express').Router();
-const { readFromFile, readAndAppend } = require('../db/db.js');
+const { readFromFile, writeToFile, readAndAppend } = require('../db/db.js');
 const { v4: uuidv4 } = require('uuid');
 
 
@@ -18,16 +18,33 @@ notes.get('/', (req, res) => {
       const newNote = {
         title: title,
         text: text,        
-        note_id: uuidv4(),
+        id: uuidv4(),
 
       };
-      console.log(text);
-    console.log(newNote);
+      
+    
       readAndAppend(newNote, './db/db.json');
       res.json(`note added successfully 🚀`);
     } else {
       res.error('Error in adding a note');
     }
   });
+
+  // DELETE Route for a specific tip
+notes.delete('/:id', (req, res) => {
+  const noteId = req.params.id;
+  readFromFile('./db/db.json')
+    .then((data) => JSON.parse(data))
+    .then((json) => {
+      // Make a new array of all tips except the one with the ID provided in the URL
+      const result = json.filter((note) => note.id !== noteId);
+
+      // Save that array to the filesystem
+      writeToFile('./db/db.json', result);
+
+      // Respond to the DELETE request
+      res.json(`Item ${noteId} has been deleted 🗑️`);
+    });
+});
 
 module.exports = notes;
